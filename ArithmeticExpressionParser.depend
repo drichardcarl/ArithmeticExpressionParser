@@ -1,0 +1,52 @@
+# depslib dependency file v1.0
+1504843470 source:c:\users\d.richardcarl\documents\csc 153\arithmeticexpressionparser\aparse.c
+	<stdio.h>
+	<string.h>
+	<conio.h>
+	<stdlib.h>
+	"node.h"
+	"tokens.h"
+
+1504596547 c:\users\d.richardcarl\documents\csc 153\arithmeticexpressionparser\node.h
+
+1504605358 c:\users\d.richardcarl\documents\csc 153\arithmeticexpressionparser\tokens.h
+
+1504938125 source:c:\users\carlrichard.dumdum\documents\csc 153\arithmeticexpressionparser\aparse.c
+	<stdio.h>
+	<string.h>
+	<conio.h>
+	<stdlib.h>
+	"node.h"
+	"tokens.h"
+
+1504927901 c:\users\carlrichard.dumdum\documents\csc 153\arithmeticexpressionparser\node.h
+
+1504845546 c:\users\carlrichard.dumdum\documents\csc 153\arithmeticexpressionparser\tokens.h
+
+1504937770 source:c:\users\carlrichard.dumdum\documents\csc 153\arithmeticexpressionparser\node.c
+	<stdio.h>
+	"node.h"
+
+1505329365 source:c:\users\d.richardcarl.hobbit\documents\csc 153\arithmeticexpressionparser\node.c
+	<stdio.h>
+	"node.h"
+
+1505329372 c:\users\d.richardcarl.hobbit\documents\csc 153\arithmeticexpressionparser\node.h
+
+1505372572 source:c:\users\d.richardcarl.hobbit\documents\csc 153\arithmeticexpressionparser\aparse.c
+	<stdio.h>
+	"node.h"
+	"tokens.h"
+	"aparse.h"
+
+1505328931 c:\users\d.richardcarl.hobbit\documents\csc 153\arithmeticexpressionparser\tokens.h
+
+1505370236 source:c:\users\d.richardcarl.hobbit\documents\csc 153\arithmeticexpressionparser\aepcli.c
+	<stdio.h>
+	<string.h>
+	<conio.h>
+	<stdlib.h>
+	"aparse.h"
+
+1505370377 c:\users\d.richardcarl.hobbit\documents\csc 153\arithmeticexpressionparser\aparse.h
+

@@ -1,0 +1,347 @@
+#include <stdio.h>
+#include <string.h>
+#include <conio.h>
+#include <stdlib.h>
+#include "node.h"
+#include "tokens.h"
+#define BUFFER 256
+#define AEXPRSZ 64
+
+void parseInput(char*);
+int isInputValid(char*);
+int isKeywordValid(char*); // Is the Input Keyword Valid ?
+int isIExpAExp(char*); // Is the Input Expresion an Arithmetic Expression ?
+void getKeyword(char*,char*);
+int getAExp(char*,char*);
+void cleanStr(char*);
+void zeroFill(char*, int);
+int ccount(char*,char);
+
+//-----------------------------------
+void gin(char*, char*, char*);
+int inparse(char*, char*);
+int getKwdIdx(char*);
+void aparse(char*);
+struct NODE* bAExpr3(char*); // build arithmetic expression tree
+struct NODE* _bAExpr3(char*); // main process
+char getOpt(char*); // get operator of highest precedence
+void getLRExpr(char*, char*, char*, char); // get Left and Right sub-expression
+char* char2str(char);
+
+int main(int argc, char* argv[]){
+    struct NODE* tr = bAExpr3("2*3+(6/2+6*(2+6))");
+    printf("\n\n");
+    postorder(tr);
+//    struct NODE* L = (struct NODE*)malloc(sizeof(struct NODE));
+//    L->info = (char*)malloc(AEXPRSZ*sizeof(char));
+//    L->info = "2";
+//    L->left  = NULL;
+//    L->right = NULL;
+//
+//    struct NODE* R = (struct NODE*)malloc(sizeof(struct NODE));
+//    R->info = (char*)malloc(AEXPRSZ*sizeof(char));
+//    R->info = "7";
+//    R->left  = NULL;
+//    R->right = NULL;
+//
+//    struct NODE* RO = (struct NODE*)malloc(sizeof(struct NODE));
+//    RO->info = (char*)malloc(AEXPRSZ*sizeof(char));
+//    RO->info = "+";
+//    RO->left = L;
+//    RO->right = R;
+//
+//    postorder(RO);
+
+    char buffer[BUFFER];
+    printf("--------------------------------------------\n");
+    printf("       ARITHMETIC EXPRESSION PARSER         |\n");
+    printf("         (ENTER \"exit\" TO EXIT)             |\n");
+    printf("--------------------------------------------\n\n");
+    char iExpression[BUFFER];
+    char iKeyword[30];
+    while (1){
+        fflush(stdin);
+        zeroFill(buffer, BUFFER);
+        zeroFill(iExpression, BUFFER);
+        zeroFill(iKeyword, 30);
+
+        printf("[>] ");
+        gets(buffer);
+
+        gin(buffer, iKeyword, iExpression);
+        printf("kwd : %s\n", iKeyword);
+        printf("expr : %s\n", iExpression);
+
+        switch(inparse(iKeyword, iExpression)){
+        case 1:
+            return 0;
+            break;
+        case -1:
+            printf("[*] Invalid Keyword.\n");
+            continue;
+        case -2:
+            printf("[*] Invalid Arithmetic Expression.\n");
+            continue;
+        default:
+            continue;
+        }
+
+        //parseInput(buffer);
+//        getKeyword(buffer, iKeyword);
+//        if (!getInputExp(buffer, iExpression)){
+//            printf("keyword : %s\n",iKeyword);
+//            printf("expression : %s\n",iExpression);
+//            printf("is AExp? : %s\n",((isIExpAExp(iExpression)) ? "yes"  : "no"));
+//        }
+//        else printf("Invalid Input :p\n");
+    }
+
+    return 0;
+}
+
+void parseInput(char* buffer){
+    (isKeywordValid(buffer)) ? printf("valid\n") : printf("not valid\n");
+}
+
+int isInputValid(char* input){
+    ;
+}
+
+int isKeywordValid(char* input){
+    char iKeyword[30];
+    getKeyword(input, iKeyword);
+
+    int i, hasMatch = 0;
+    for (i=0; i<NK; ++i){
+        if (!strcmp(KEYWORD[i], iKeyword)){
+            hasMatch = 1;
+            break;
+        }
+    }
+
+    return hasMatch;
+}
+
+void getKeyword(char* _src, char* _dest){
+    int i;
+    for (i=0; _src[i]!='\0' && _src[i]!=' ' && _src!='\n'; ++i){
+        _dest[i] = _src[i];
+    }
+    _dest[i] = '\0';
+}
+int getAExp(char* _src, char* _dest){
+    int i,j, start=0, error=-1;
+    for (i=0,j=0; i<BUFFER; ++i){
+        if (start){
+            if (_src[i] == '"'){error=0; break;}
+            _dest[j++] = _src[i];
+        }
+        else
+            if (_src[i] == '"'){start=1; continue;}
+    }
+    _dest[j] = '\0';
+    cleanStr(_dest); // strip spaces from an arithmetic expression
+
+    // check if closing quotation mark is encountered
+    // but still has empty destination
+    if (!error)
+        if (!strlen(_dest)) error=-1;
+
+    return error;
+}
+
+void cleanStr(char* _str){
+    int i, j;
+    for (i=0, j=0; i<strlen(_str); ++i){
+        if (_str[i] != ' ')
+            _str[j++] = _str[i];
+    }
+    _str[j] = '\0';
+}
+
+void zeroFill(char* _src, int _sz){
+    int i;
+    for (i=0; i<_sz; ++i)
+        _src[i] = '\0';
+}
+
+int isIExpAExp(char* _iExp){
+    printf("--%d\n",strlen(_iExp));
+    if (strlen(_iExp) == 0) return 0;
+    int i, j, error = 0;
+    int _t;
+
+    // test if the expression has the right symbols only
+    for (i=0; i<strlen(_iExp); ++i){
+        _t=0;
+        for (j=0; j<NS; ++j){
+            if (_iExp[i] == SYMBOL[j]) {_t=1; break;}
+        }
+        if (!_t) {error=-1; break;}
+    }
+
+    // test if the expression has the correct # of open and close
+    // parenthesis
+    if (ccount(_iExp, '(') != ccount(_iExp, ')'))
+        error = -1;
+
+    // test if the expression has at least 1 operator
+    // other than parenthesis
+    if (!ccount(_iExp, '*') &&
+        !ccount(_iExp, '/') &&
+        !ccount(_iExp, '+') &&
+        !ccount(_iExp, '-'))
+        error = -1;
+
+    return ((!error) ? 1 : 0);
+}
+
+int ccount(char* _src, char _c){
+    int i, _num = 0;
+    for (i=0; i<strlen(_src); ++i)
+        if (_src[i] == _c) ++_num;
+    return _num;
+}
+
+
+void gin(char* _ibuff, char* _keyword, char* _expr){
+    int i, j, next=0;
+    for (i=0, j=0; i<strlen(_ibuff); ++i){
+        if (_ibuff[i] == ' ' && !next){next=1; continue;}
+        if (!next) _keyword[i] = _ibuff[i];
+        else _expr[j++] = _ibuff[i];
+    }
+}
+
+int inparse(char* _keyword, char* _expr){
+    // check validity of keyword
+    // code -1 is for invalid keyword
+    if (!isKeywordValid(_keyword)) return -1;
+    // check validity of expression base on keyword
+    switch(getKwdIdx(_keyword)){
+    case 0: // exit
+        return 1; // code 1 is exit
+        break;
+    case 1:; // aparse
+        char aExpr[BUFFER];
+        zeroFill(aExpr, BUFFER);
+        // if invalid arithmetic expression -> error
+        if (getAExp(_expr, aExpr) || !isIExpAExp(aExpr))
+            return -2;
+        aparse(aExpr);
+        return 0;
+        break;
+    }
+}
+
+int getKwdIdx(char* _kwd){
+    // assumtion : keyword is already checked
+    //           : which means, keyword is valid
+    int i;
+    for (i=0; i<NK; ++i)
+        if (!strcmp(_kwd, KEYWORD[i]))
+            return i;
+}
+
+void aparse(char* _aexpr){
+    ;
+}
+struct NODE* bAExpr3(char* _aExpr){
+    struct NODE* _t = (struct NODE*)malloc(sizeof(struct NODE));
+    _t->info = (char*)malloc(AEXPRSZ * sizeof(char));
+    _t->info = "";
+    _t->left = NULL;
+    _t->right = NULL;
+
+    _t = _bAExpr3(_aExpr);
+
+    return _t;
+}
+struct NODE* _bAExpr3(char* _aExpr){
+    // assumption : _aExpr contains the right arithmetic expression
+    struct NODE* _t = (struct NODE*)malloc(sizeof(struct NODE));
+    _t->info = (char*)malloc(AEXPRSZ * sizeof(char));
+    _t->info = "";
+    _t->left = NULL;
+    _t->right = NULL;
+
+    char _opt = getOpt(_aExpr);
+    printf("expr : [%s]\n", _aExpr);
+    printf("opt : [%c]\n", _opt);
+    if (_opt != '\0'){
+        _t->info = char2str(_opt);
+        char* _L = (char*)malloc(AEXPRSZ * sizeof(char));
+        char* _R = (char*)malloc(AEXPRSZ * sizeof(char));
+        getLRExpr(_aExpr, _L, _R, _opt);
+        printf("%s\n", _L);
+        printf("%s\n\n", _R);
+        _t->left = bAExpr3(_L);
+        _t->right = bAExpr3(_R);
+    }
+
+    // base case
+    // when _aExpr is just a number
+    else{
+        _t->info = _aExpr;
+        printf("[*]%s\n", _t->info);
+        _t->left = NULL;
+        _t->right = NULL;
+    }
+
+    return _t;
+}
+
+char getOpt(char* _aExpr){
+    int i, skip=0;
+    char _opt = '\0';
+    for (i=0; i<strlen(_aExpr); ++i){
+        if (_aExpr[i] == '(') ++skip;
+        if (_aExpr[i] == ')') --skip;
+        if (skip) continue;
+
+        if (_aExpr[i] == '+' || _aExpr[i] == '-'){
+            if (_opt == '*' || _opt == '/' || _opt == '\0')
+                _opt = _aExpr[i];
+        }
+        else if (_aExpr[i] == '*' || _aExpr[i] == '/'){
+            if (_opt == '\0')
+                _opt = _aExpr[i];
+        }
+    }
+    return _opt;
+}
+
+void getLRExpr(char* _src, char* _left, char* _right, char _opt){
+    int i, j, startr=0;
+    for (i=0, j=0; i<strlen(_src); ++i){
+        if (!startr){
+            if (_src[i] == _opt){startr=1; continue;}
+            _left[i] = _src[i];
+            _left[i+1] = '\0';
+        }
+        else
+            _right[j++] = _src[i];
+
+    }
+    _right[j] = '\0';
+    if (_left[0] == '(')
+        unparenthesize(_left);
+    if (_right[0] == '(')
+        unparenthesize(_right);
+}
+
+char* char2str(char _c){
+    char* _t = malloc(2*sizeof(char));
+    _t[0] = _c;
+    _t[1] = '\0';
+    return _t;
+}
+
+void unparenthesize(char* _src){
+    // assumption : fisrt and the last character before null character
+    //            : are '(' and ')' respectively
+    int i;
+    for (i=1; i<strlen(_src)-1; ++i)
+        _src[i-1] = _src[i];
+    _src[i-1] = '\0';
+}
