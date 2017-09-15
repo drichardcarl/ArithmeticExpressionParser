@@ -1,2 +1,2 @@
 # ArithmeticExpressionParser
-CSC 153
+- a program requirement for CSC 153
